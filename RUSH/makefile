@@ -21,6 +21,6 @@ $(TARGET): $(OBJS)
 %.o: %.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-# Clean
+# Clean (Move the files to the trash bin).
 clean:
-	rm -vf $(TARGET) $(OBJS)
+	mv $(TARGET) $(OBJS) /Users/adrianlozada/.Trash
