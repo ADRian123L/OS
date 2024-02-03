@@ -1,4 +1,4 @@
-# Compiler:
+#Compiler:
 CC=clang
 
 # Flags:
@@ -10,14 +10,17 @@ TARGET=main
 # Objects:
 OBJS=main.o
 
+# Default:
+all:	$(TARGET)
+
 # Compiling:
 $(TARGET): $(OBJS)
-             $(CC) -o $@ $< $(CFLAGS)
+	$(CC) -o $@ $^ $(CFLAGS)
 
 # Object files:
 %.o: %.c
-             $(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) -c -o $@ $< $(CFLAGS)
 
 # Clean
 clean:
-        rm -f $(TARGET) $(OBJS)
+	rm -vf $(TARGET) $(OBJS)

@@ -4,4 +4,8 @@
 #include <string.h>
 #include <unistd.h>
 
-int main(int argc, char *argv[]) { return 0; }
+int main(int argc, char *argv[]) {
+    char *Message = "It compiles\n";
+    write(STDOUT_FILENO, Message, strlen(Message));
+    return 0;
+}
