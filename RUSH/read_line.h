@@ -19,9 +19,10 @@
 typedef struct inputs {
     char  *command;
     bool   redirection;
+    char **whole_array;
     char **arguments;
     char **redi_argu;
-    size_t argc;
+    size_t redi_argc;
 } inp;
 
 // Functions:
@@ -29,5 +30,6 @@ inp  **get_commands();
 char **divide_commands(char *, const char *);
 inp   *get_tokens(char *);
 inp  **get_structures(char **);
+void   free_memory(inp **);
 
 #endif /* READ_LINE_H */

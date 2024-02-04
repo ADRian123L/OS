@@ -37,22 +37,23 @@ inp *get_tokens(char *str) {
     inp *present_command = (inp *) calloc(1, sizeof(inp));
 
     // Get the command and its arguments:
-    char **array_string      = divide_commands(str, WHTSP);
-    present_command->command = array_string[0]; // Store the command
+    char **array_string          = divide_commands(str, WHTSP);
+    present_command->whole_array = array_string;
+    present_command->command     = array_string[0]; // Store the command
 
     // Check for redirection operators:
     char **starting_point_redi = NULL;
     size_t counter             = 0;
-    for (char **ptr = array_string + 1; *ptr != NULL; ++ptr, ++counter)
+    for (char **ptr = array_string + 1; *ptr != NULL; ++ptr)
         if (strcmp(*ptr, REDIR) == 0) {
             present_command->redirection = true;
-            *ptr                         = NULL;
+            *ptr                         = strdup(NULLCHAR);
             starting_point_redi          = ptr + 1;
-            --counter;
+            ++counter;
         }
     present_command->arguments = array_string + 1;
     present_command->redi_argu = starting_point_redi;
-    present_command->argc      = counter;
+    present_command->redi_argc = counter;
 
     return present_command;
 }
@@ -71,4 +72,17 @@ inp **get_structures(char **string_array) {
     }
     append(&vector, NULL);
     return vector.inputs_var;
+}
+
+void free_memory(inp **array) {
+    for (inp **ptr = array; *ptr != NULL; ++ptr) {
+
+        for (char **ptr_char = (*ptr)->whole_array; *ptr_char != NULL;
+             ++ptr_char)
+            free(*ptr_char);
+
+        free((*ptr)->whole_array);
+        free(*ptr);
+    }
+    free(array);
 }
