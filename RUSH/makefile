@@ -8,7 +8,7 @@ CFLAGS=-I. -Wall
 TARGET=main
 
 # Objects:
-OBJS=main.o
+OBJS=main.o read_line.o vector.o
 
 # Default:
 all:	$(TARGET)

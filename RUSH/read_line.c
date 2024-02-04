@@ -1,17 +1,20 @@
 #include "read_line.h"
 
 // Prompts
-char **get_commands(char *str) {
+inp **get_commands() {
     char  *input = NULL;
     size_t size  = 0;
     // Prompt:
+    write(STDOUT_FILENO, PROMPT, strlen(PROMPT));
     getline(&input, &size, stdin);
+
     // Process the inputs:
-    char **commands = divide_commands(str, AMPER);
-    inp    inputs;
+    char **commands        = divide_commands(input, AMPER);
+    inp  **structure_array = get_structures(commands);
+
     // Release the memory:
     free(input);
-    return NULL;
+    return structure_array;
 }
 
 // Divides the commands
@@ -43,7 +46,7 @@ inp *get_tokens(char *str) {
     size_t counter             = 0;
     for (char **ptr = array_string + 1; *ptr != NULL; ++ptr, ++counter)
         if (strcmp(*ptr, REDIR) == 0) {
-            present_command->redirection = 1;
+            present_command->redirection = true;
             *ptr                         = NULL;
             starting_point_redi          = ptr + 1;
             --counter;
@@ -53,4 +56,20 @@ inp *get_tokens(char *str) {
     present_command->argc      = counter;
 
     return present_command;
+}
+
+inp **get_structures(char **string_array) {
+    // Allocate the structures:
+    v_str vector = {15, 0, NULL};
+    vector.inputs_var =
+        (struct inputs **) calloc(vector.capacity, sizeof(struct inputs *));
+
+    // Append the structures:
+    char **ptr = string_array;
+    while (*ptr != NULL) {
+        append(&vector, get_tokens(*ptr));
+        ++ptr;
+    }
+    append(&vector, NULL);
+    return vector.inputs_var;
 }
