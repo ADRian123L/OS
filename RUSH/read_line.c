@@ -36,23 +36,31 @@ inp *get_tokens(char *str) {
     // Allocate a structure to store the command:
     inp *present_command = (inp *) calloc(1, sizeof(inp));
 
+    // Structure for storing the output files:
+    vec v1    = {15, 0, NULL};
+    v1.string = (char **) calloc(v1.capacity, sizeof(char *));
+
     // Get the command and its arguments:
     char **array_string          = divide_commands(str, WHTSP);
     present_command->whole_array = array_string;
     present_command->command     = array_string[0]; // Store the command
 
     // Check for redirection operators:
-    char **starting_point_redi = NULL;
-    size_t counter             = 0;
+    size_t counter = 0;
     for (char **ptr = array_string + 1; *ptr != NULL; ++ptr)
-        if (strcmp(*ptr, REDIR) == 0) {
+        if (strcmp(*ptr, REDIR) == 0 && !present_command->redirection) {
             present_command->redirection = true;
             *ptr                         = strdup(NULLCHAR);
-            starting_point_redi          = ptr + 1;
-            ++counter;
+            append_string(&v1, *(ptr + 1));
+            counter++;
         }
+        else if (strcmp(*ptr, REDIR) == 0) {
+            append_string(&v1, *(ptr + 1));
+            counter++;
+        }
+    append_string(&v1, NULL);
     present_command->arguments = array_string + 1;
-    present_command->redi_argu = starting_point_redi;
+    present_command->redi_argu = v1.string;
     present_command->redi_argc = counter;
 
     return present_command;
@@ -82,6 +90,7 @@ void free_memory(inp **array) {
             free(*ptr_char);
 
         free((*ptr)->whole_array);
+        free((*ptr)->redi_argu);
         free(*ptr);
     }
     free(array);
