@@ -20,15 +20,14 @@ inp **get_commands() {
 // Divides the commands
 char **divide_commands(char *str, const char *delim) {
     // Creating an array to store the strings
-    vec v1;
-    v1.capacity = 15;
-    v1.size     = 0;
-    v1.string   = (char **) calloc(v1.capacity, sizeof(char *));
+    vec v1    = {15, 0, NULL};
+    v1.string = (char **) calloc(v1.capacity, sizeof(char *));
 
     // Appending the strings:
     char *strings = NULL;
     while ((strings = strsep(&str, delim)) != NULL)
-        append_string(&v1, strdup(strings));
+        ((strcmp(strings, NULLCHAR) != 0) ? append_string(&v1, strdup(strings))
+                                          : NULL);
     append_string(&v1, NULL); // Append NULL
     return v1.string;
 }

@@ -13,6 +13,7 @@
 #define REDIR ">"
 #define WHTSP " "
 #define EMPTY "#"
+#define NULLCHAR "\0"
 
 // Structure
 typedef struct inputs {
