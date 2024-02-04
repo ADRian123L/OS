@@ -50,7 +50,7 @@ inp *get_tokens(char *str) {
             starting_point_redi          = ptr + 1;
             --counter;
         }
-    present_command->arguments = array_string;
+    present_command->arguments = array_string + 1;
     present_command->redi_argu = starting_point_redi;
     present_command->argc      = counter;
 
