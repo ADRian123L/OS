@@ -7,7 +7,7 @@ char **get_commands(char *str) {
     // Prompt:
     getline(&input, &size, stdin);
     // Process the inputs:
-    char **commands = divide_commands(str);
+    char **commands = divide_commands(str, AMPER);
     inp    inputs;
     // Release the memory:
     free(input);
@@ -15,7 +15,7 @@ char **get_commands(char *str) {
 }
 
 // Divides the commands
-char **divide_commands(char *str) {
+char **divide_commands(char *str, const char *delim) {
     // Creating an array to store the strings
     vec v1;
     v1.capacity = 15;
@@ -24,22 +24,33 @@ char **divide_commands(char *str) {
 
     // Appending the strings:
     char *strings = NULL;
-    while ((strings = strsep(&str, AMPER)) != NULL)
+    while ((strings = strsep(&str, delim)) != NULL)
         append_string(&v1, strdup(strings));
+    append_string(&v1, NULL); // Append NULL
     return v1.string;
 }
 
-inp **get_tokens(char *str) {
-    // Creating an object to store the structures
-    v_str v1 = {15, 0, NULL};
-    v1.inputs_var =
-        (struct inputs **) calloc(v1.capacity, sizeof(struct inputs *));
-    inp **tokens_for_each_input;
+inp *get_tokens(char *str) {
+    // Allocate a structure to store the command:
+    inp *present_command = (inp *) calloc(1, sizeof(inp));
 
-    // Appending the structures
-    char *strings = NULL;
-    while ((strings = strsep(&str, WHTSP)) != NULL) {
-        append(&v1, strings);
-    }
-    return tokens_for_each_input;
+    // Get the command and its arguments:
+    char **array_string      = divide_commands(str, WHTSP);
+    present_command->command = array_string[0]; // Store the command
+
+    // Check for redirection operators:
+    char **starting_point_redi = NULL;
+    size_t counter             = 0;
+    for (char **ptr = array_string + 1; *ptr != NULL; ++ptr, ++counter)
+        if (strcmp(*ptr, REDIR) == 0) {
+            present_command->redirection = 1;
+            *ptr                         = NULL;
+            starting_point_redi          = ptr + 1;
+            --counter;
+        }
+    present_command->arguments = array_string;
+    present_command->redi_argu = starting_point_redi;
+    present_command->argc      = counter;
+
+    return present_command;
 }

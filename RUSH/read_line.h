@@ -9,22 +9,23 @@
 // Macros:
 #define PROMPT "rush> "
 #define AMPER "&"
-#define REDIR '>'
+#define REDIR ">"
 #define WHTSP " "
+#define EMPTY "#"
 
 // Structure
 typedef struct inputs {
     char  *command;
-    char  *redirection_com;
+    int    redirection;
     char **arguments;
     char **redi_argu;
     size_t argc;
 } inp;
 
-inp **read_prompt();
-
+// Functions:
+inp  **read_prompt();
 char **get_commands(char *);
-char **divide_commands(char *);
-inp  **get_tokens(char *);
+char **divide_commands(char *, const char *);
+inp   *get_tokens(char *);
 
 #endif /* READ_LINE_H */
