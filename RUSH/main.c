@@ -1,33 +1,12 @@
 #include "read_line.h"
 
 int main(int argc, char *argv[]) {
-    inp **arri = get_commands();
-    for (inp **ptr = arri; *ptr != NULL; ++ptr) {
+    inp  **arri = NULL;
+    size_t num_commands;
+    do {
+        inp **arri = get_commands(&num_commands);
 
-        printf("[INPUT]: %s\n", (*ptr)->command);
-        for (char **ptr_char = (*ptr)->arguments;
-             *ptr_char != NULL && strcmp(*ptr_char, NULLCHAR) != 0;
-             ++ptr_char) {
-            printf("[ARGUMENT %lld]: %s\n",
-                   (long long int) (ptr_char - (*ptr)->arguments),
-                   *ptr_char);
-        }
-
-        printf("[Redi] %d\n", (*ptr)->redirection);
-        for (char **ptr_char = (*ptr)->redi_argu;
-             (*ptr)->redirection && *ptr_char != NULL;
-             ++ptr_char) {
-            printf("[Redirection ARGUMENT %lld]: %s\n",
-                   (long long int) (ptr_char - (*ptr)->redi_argu),
-                   *ptr_char);
-        }
-
-        write(STDOUT_FILENO, "\n", strlen("\n"));
-    }
-
-    write(STDOUT_FILENO, "Completed loop\n", strlen("Completed loop\n"));
-    free_memory(arri);
-    write(STDOUT_FILENO, "Free Complete\n", strlen("Free Complete\n"));
-
+        free_memory(arri);
+    } while (true);
     return 0;
 }

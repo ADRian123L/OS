@@ -26,10 +26,10 @@ typedef struct inputs {
 } inp;
 
 // Functions:
-inp  **get_commands();
+inp  **get_commands(size_t *);
 char **divide_commands(char *, const char *);
 inp   *get_tokens(char *);
-inp  **get_structures(char **);
+inp  **get_structures(char **, size_t *);
 void   free_memory(inp **);
 
 #endif /* READ_LINE_H */

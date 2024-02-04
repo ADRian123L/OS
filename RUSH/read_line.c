@@ -1,16 +1,16 @@
 #include "read_line.h"
 
 // Prompts
-inp **get_commands() {
-    char  *input = NULL;
-    size_t size  = 0;
+inp **get_commands(size_t *size) {
+    char *input = NULL;
     // Prompt:
+    size_t num;
     write(STDOUT_FILENO, PROMPT, strlen(PROMPT));
-    getline(&input, &size, stdin);
+    getline(&input, &num, stdin);
 
     // Process the inputs:
     char **commands        = divide_commands(input, AMPER);
-    inp  **structure_array = get_structures(commands);
+    inp  **structure_array = get_structures(commands, size);
 
     // Release the memory:
     free(input);
@@ -66,17 +66,19 @@ inp *get_tokens(char *str) {
     return present_command;
 }
 
-inp **get_structures(char **string_array) {
+inp **get_structures(char **string_array, size_t *size) {
     // Allocate the structures:
     v_str vector = {15, 0, NULL};
     vector.inputs_var =
         (struct inputs **) calloc(vector.capacity, sizeof(struct inputs *));
 
     // Append the structures:
+    *size      = 0;
     char **ptr = string_array;
     while (*ptr != NULL) {
         append(&vector, get_tokens(*ptr));
         ++ptr;
+        (*size)++;
     }
     append(&vector, NULL);
     return vector.inputs_var;
