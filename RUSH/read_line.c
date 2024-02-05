@@ -7,6 +7,7 @@ inp **get_commands(size_t *size) {
     size_t num;
     write(STDOUT_FILENO, PROMPT, strlen(PROMPT));
     getline(&input, &num, stdin);
+    if (input[num - 1] == '\n') input[num - 1] = '\0';
 
     // Process the inputs:
     char **commands        = divide_commands(input, AMPER);
@@ -41,16 +42,17 @@ inp *get_tokens(char *str) {
     v1.string = (char **) calloc(v1.capacity, sizeof(char *));
 
     // Get the command and its arguments:
-    char **array_string          = divide_commands(str, WHTSP);
+    char **array_string          = seperate(str);
     present_command->whole_array = array_string;
     present_command->command     = array_string[0]; // Store the command
 
     // Check for redirection operators:
-    size_t counter = 0;
+    size_t counter      = 0;
+    size_t command_args = 0;
     for (char **ptr = array_string + 1; *ptr != NULL; ++ptr)
         if (strcmp(*ptr, REDIR) == 0 && !present_command->redirection) {
             present_command->redirection = true;
-            *ptr                         = strdup(NULLCHAR);
+            *ptr                         = NULL;
             append_string(&v1, *(ptr + 1));
             counter++;
         }
@@ -58,7 +60,10 @@ inp *get_tokens(char *str) {
             append_string(&v1, *(ptr + 1));
             counter++;
         }
+        else if (!present_command->redirection)
+            command_args++;
     append_string(&v1, NULL);
+    present_command->num_args  = command_args;
     present_command->arguments = array_string + 1;
     present_command->redi_argu = v1.string;
     present_command->redi_argc = counter;
@@ -91,9 +96,41 @@ void free_memory(inp **array) {
              ++ptr_char)
             free(*ptr_char);
 
+        for (char **ptr_char = (*ptr)->redi_argu; *ptr_char != NULL; ++ptr_char)
+            free(*ptr_char);
+
         free((*ptr)->whole_array);
         free((*ptr)->redi_argu);
         free(*ptr);
     }
     free(array);
+}
+
+char **seperate(char *str) {
+    // Vector to store the strings:
+    vec answer    = {15, 0, NULL};
+    answer.string = (char **) calloc(answer.capacity, sizeof(char *));
+
+    char *ptr = str, *last = str, *tmp;
+    removeSpc(&ptr);
+
+    for (last = ptr; *ptr != '\0'; ++ptr) {
+        if ((*ptr == ' ' || *ptr == '\t' || *ptr == '\n')) {
+            tmp = (char *) calloc((ptr - last + 1), sizeof(char));
+            strlcpy(tmp, last, (ptr - last) + 1);
+            if (strcmp(tmp, "") != 0) append_string(&answer, strdup(tmp));
+            free(tmp);
+            removeSpc(&ptr);
+            last = ptr;
+        }
+    }
+    append_string(&answer, NULL);
+    return answer.string;
+}
+
+void removeSpc(char **str) {
+    char *ptr = *str;
+    while (*ptr != '\0' && (*ptr == ' ' || *ptr == '\t'))
+        ptr++;
+    *str = ptr;
 }

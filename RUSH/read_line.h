@@ -23,6 +23,7 @@ typedef struct inputs {
     char **arguments;
     char **redi_argu;
     size_t redi_argc;
+    size_t num_args;
 } inp;
 
 // Functions:
@@ -31,5 +32,7 @@ char **divide_commands(char *, const char *);
 inp   *get_tokens(char *);
 inp  **get_structures(char **, size_t *);
 void   free_memory(inp **);
+char **seperate(char *);
+void   removeSpc(char **);
 
 #endif /* READ_LINE_H */
