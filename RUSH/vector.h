@@ -20,5 +20,7 @@ typedef struct vector_struct {
 // Functions:
 void append(v_str *, struct inputs *);
 void append_string(vec *, char *);
+void construct(v_str *);
+void construct_string(vec *);
 
 #endif /* VECTOR_H */

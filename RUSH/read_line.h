@@ -9,30 +9,32 @@
 
 // Macros:
 #define PROMPT "rush> "
-#define AMPER "&"
-#define REDIR ">"
-#define WHTSP " "
-#define EMPTY "#"
-#define NULLCHAR "\0"
+#define AMPERS "&"
+#define REDIRS ">"
+#define WHTSPS " "
+#define EMPTYS "#"
+#define TABS "\t"
+#define NULLCHARS "\0"
+#define AMPER '&'
+#define REDI '>'
+#define NEWL '\n'
+#define ENDC '\0'
 
 // Structure
 typedef struct inputs {
-    char  *command;
+    char **commands;
     bool   redirection;
-    char **whole_array;
-    char **arguments;
-    char **redi_argu;
-    size_t redi_argc;
-    size_t num_args;
-} inp;
+    char **redir_output;
+    size_t num_outputs;
+} comnd_strct;
 
 // Functions:
-inp  **get_commands(size_t *);
-char **divide_commands(char *, const char *);
-inp   *get_tokens(char *);
-inp  **get_structures(char **, size_t *);
-void   free_memory(inp **);
-char **seperate(char *);
-void   removeSpc(char **);
+comnd_strct **get_commands();
+char        **tokens(char *);
+comnd_strct **commands(char **);
+void          free_memory(comnd_strct **);
+comnd_strct  *command(char **start, char **end);
+comnd_strct  *create_strct(char **, bool, char **, size_t);
+void          free_strings(char **);
 
 #endif /* READ_LINE_H */

@@ -1,136 +1,112 @@
 #include "read_line.h"
+#include "vector.h"
 
 // Prompts
-inp **get_commands(size_t *size) {
-    char *input = NULL;
+comnd_strct **get_commands() {
     // Prompt:
+    char  *input = NULL;
     size_t num;
     write(STDOUT_FILENO, PROMPT, strlen(PROMPT));
     getline(&input, &num, stdin);
-    if (input[num - 1] == '\n') input[num - 1] = '\0';
 
-    // Process the inputs:
-    char **commands        = divide_commands(input, AMPER);
-    inp  **structure_array = get_structures(commands, size);
+    // Parse the input
+    comnd_strct **array_struct = commands(tokens(input));
 
     // Release the memory:
     free(input);
-    return structure_array;
+
+    // Return the array of structures
+    return array_struct;
 }
 
-// Divides the commands
-char **divide_commands(char *str, const char *delim) {
-    // Creating an array to store the strings
-    vec v1    = {15, 0, NULL};
-    v1.string = (char **) calloc(v1.capacity, sizeof(char *));
+// Parse the input into tokens:
+char **tokens(char *str) {
+    // Create a vector of strings to store the tokens:
+    vec v1;
+    construct_string(&v1);
 
-    // Appending the strings:
-    char *strings = NULL;
-    while ((strings = strsep(&str, delim)) != NULL)
-        ((strcmp(strings, NULLCHAR) != 0) ? append_string(&v1, strdup(strings))
-                                          : NULL);
-    append_string(&v1, NULL); // Append NULL
+    // Separate the string into tokens
+    char *token = NULL;
+    while ((token = strsep(&str, " \t\n")) != NULL)
+        if (strcmp(token, NULLCHARS) != 0) append_string(&v1, strdup(token));
+    append_string(&v1, NULL);
+
+    // Return the array of strings
     return v1.string;
 }
 
-inp *get_tokens(char *str) {
-    // Allocate a structure to store the command:
-    inp *present_command = (inp *) calloc(1, sizeof(inp));
+// The function stores the commands in array string
+comnd_strct **commands(char **array_strings) {
+    // Create a vector to store the structures:
+    v_str v1;
+    construct(&v1);
 
-    // Structure for storing the output files:
-    vec v1    = {15, 0, NULL};
-    v1.string = (char **) calloc(v1.capacity, sizeof(char *));
-
-    // Get the command and its arguments:
-    char **array_string          = seperate(str);
-    present_command->whole_array = array_string;
-    present_command->command     = array_string[0]; // Store the command
-
-    // Check for redirection operators:
-    size_t counter      = 0;
-    size_t command_args = 0;
-    for (char **ptr = array_string + 1; *ptr != NULL; ++ptr)
-        if (strcmp(*ptr, REDIR) == 0 && !present_command->redirection) {
-            present_command->redirection = true;
-            *ptr                         = NULL;
-            append_string(&v1, *(ptr + 1));
-            counter++;
+    // Separate the commands:
+    char **ptr = array_strings, **from;
+    for (from = ptr; *ptr != NULL; ++ptr)
+        if (**ptr == AMPER) {
+            append(&v1, command(from, ptr));
+            from = ptr + 1;
         }
-        else if (strcmp(*ptr, REDIR) == 0) {
-            append_string(&v1, *(ptr + 1));
-            counter++;
-        }
-        else if (!present_command->redirection)
-            command_args++;
+    append(&v1, command(from, ptr));
+
+    free_strings(array_strings);
+    return v1.inputs_var;
+}
+
+// The function stores each command's arguments
+comnd_strct *command(char **start, char **end) {
+    // Create a vector to store the strings
+    vec v1, v2;
+    construct_string(&v1);
+    construct_string(&v2);
+    bool   redi  = false;
+    size_t count = 0;
+
+    // Create a string of the arguments
+    char **ptr;
+    for (ptr = start; ptr < end && !strchr(*ptr, REDI); ++ptr)
+        append_string(&v1, strdup(*ptr));
     append_string(&v1, NULL);
-    present_command->num_args  = command_args;
-    present_command->arguments = array_string + 1;
-    present_command->redi_argu = v1.string;
-    present_command->redi_argc = counter;
-
-    return present_command;
-}
-
-inp **get_structures(char **string_array, size_t *size) {
-    // Allocate the structures:
-    v_str vector = {15, 0, NULL};
-    vector.inputs_var =
-        (struct inputs **) calloc(vector.capacity, sizeof(struct inputs *));
-
-    // Append the structures:
-    *size      = 0;
-    char **ptr = string_array;
-    while (*ptr != NULL) {
-        append(&vector, get_tokens(*ptr));
-        ++ptr;
-        (*size)++;
+    if (*ptr != NULL && **ptr == REDI) {
+        redi = true;
+        for (char **ptr2 = ptr + 1; ptr2 < end; ++ptr2, count++)
+            append_string(&v2, strdup(*ptr2));
     }
-    append(&vector, NULL);
-    return vector.inputs_var;
+
+    // Structure for storing command
+    comnd_strct *new_strct = create_strct(v1.string, redi, v2.string, count);
+    return new_strct;
 }
 
-void free_memory(inp **array) {
-    for (inp **ptr = array; *ptr != NULL; ++ptr) {
+// The function creates a structure object
+comnd_strct *
+create_strct(char **command, bool redi, char **out_redi, size_t num_out) {
+    comnd_strct *new_strct  = (comnd_strct *) calloc(1, sizeof(comnd_strct));
+    new_strct->commands     = command;
+    new_strct->redirection  = redi;
+    new_strct->redir_output = out_redi;
+    new_strct->num_outputs  = num_out;
+    return new_strct;
+}
 
-        for (char **ptr_char = (*ptr)->whole_array; *ptr_char != NULL;
-             ++ptr_char)
-            free(*ptr_char);
-
-        for (char **ptr_char = (*ptr)->redi_argu; *ptr_char != NULL; ++ptr_char)
-            free(*ptr_char);
-
-        free((*ptr)->whole_array);
-        free((*ptr)->redi_argu);
+// The functions frees the memory used by the strings array
+void free_strings(char **array_string) {
+    for (char **ptr = array_string; *ptr != NULL; ++ptr)
         free(*ptr);
+    free(array_string);
+}
+
+// The function frees the memory used by the structures
+void free_memory(comnd_strct **array) {
+    for (comnd_strct **ptr = array; *ptr != NULL; ++ptr) {
+        for (char **ptr2 = (*ptr)->commands; *ptr2 != NULL; ++ptr2)
+            free(*ptr2);
+        free((*ptr)->commands);
+
+        for (char **ptr2 = (*ptr)->redir_output; *ptr2 != NULL; ++ptr2)
+            free(*ptr2);
+        free((*ptr)->redir_output);
     }
     free(array);
-}
-
-char **seperate(char *str) {
-    // Vector to store the strings:
-    vec answer    = {15, 0, NULL};
-    answer.string = (char **) calloc(answer.capacity, sizeof(char *));
-
-    char *ptr = str, *last = str, *tmp;
-    removeSpc(&ptr);
-
-    for (last = ptr; *ptr != '\0'; ++ptr) {
-        if ((*ptr == ' ' || *ptr == '\t' || *ptr == '\n')) {
-            tmp = (char *) calloc((ptr - last + 1), sizeof(char));
-            strlcpy(tmp, last, (ptr - last) + 1);
-            if (strcmp(tmp, "") != 0) append_string(&answer, strdup(tmp));
-            free(tmp);
-            removeSpc(&ptr);
-            last = ptr;
-        }
-    }
-    append_string(&answer, NULL);
-    return answer.string;
-}
-
-void removeSpc(char **str) {
-    char *ptr = *str;
-    while (*ptr != '\0' && (*ptr == ' ' || *ptr == '\t'))
-        ptr++;
-    *str = ptr;
 }

@@ -1,8 +1,11 @@
 #include "execute.h"
+#include <sys/_types/_s_ifmt.h>
+#include <sys/fcntl.h>
 #include <unistd.h>
 
-void execute_childs(inp **array) {
-    inp **ptr = array;
+// The function executes all commands:
+void execute_childs(comnd_strct **array) {
+    comnd_strct **ptr = array;
     while (*ptr != NULL) {
         execute_child(*ptr);
         ++ptr;
@@ -10,24 +13,25 @@ void execute_childs(inp **array) {
 }
 
 // The function executes each command
-void execute_child(inp *strct) {
+void execute_child(comnd_strct *strct) {
 
     int pid = fork();
     if (pid == -1) {
         write(STDOUT_FILENO, error_message, strlen(error_message));
     }
     else if (pid == 0) {
-        // Check if the command exist:
-
-        char *path = NULL;
-
-        if (command_exist(strct->command, &path) &&
-            execv(path, strct->whole_array) == 0)
-            ;
-        // Call execute vector:
-        else {
-            write(STDOUT_FILENO, error_message, strlen(error_message));
+        // If the redirection operator was used:
+        if (strct->redirection) {
+            close(STDOUT_FILENO);
+            open(strct->redir_output[0], O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
         }
+        // Check if the command exist if yes execute it:
+        char *path = NULL;
+        if (command_exist(strct->commands[0], &path) &&
+            execv(path, strct->commands) == 0)
+            ;
+        else
+            write(STDOUT_FILENO, error_message, strlen(error_message));
     }
     else {
         wait(NULL);

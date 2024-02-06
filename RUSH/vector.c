@@ -22,3 +22,16 @@ void append(v_str *vec, struct inputs *input) {
     vec->inputs_var[vec->size] = input;
     vec->size++;
 }
+
+void construct(v_str *object) {
+    object->capacity = 15;
+    object->size     = 0;
+    object->inputs_var =
+        (struct inputs **) calloc(object->capacity, sizeof(struct inputs *));
+}
+
+void construct_string(vec *object) {
+    object->capacity = 15;
+    object->size     = 0;
+    object->string   = (char **) calloc(object->capacity, sizeof(char *));
+}
