@@ -28,7 +28,8 @@ char **tokens(char *str) {
     // Separate the string into tokens
     char *token = NULL;
     while ((token = strsep(&str, " \t\n")) != NULL)
-        if (strcmp(token, NULLCHARS) != 0) append_string(&v1, strdup(token));
+        if (strcmp(token, NULLCHARS) != 0)
+            append_string(&v1, strdup(token));
     append_string(&v1, NULL);
 
     // Return the array of strings
@@ -92,21 +93,31 @@ create_strct(char **command, bool redi, char **out_redi, size_t num_out) {
 
 // The functions frees the memory used by the strings array
 void free_strings(char **array_string) {
-    for (char **ptr = array_string; *ptr != NULL; ++ptr)
+    for (char **ptr = array_string; *ptr != NULL; ++ptr) {
         free(*ptr);
+        *ptr = NULL;
+    }
     free(array_string);
+    array_string = NULL;
 }
 
 // The function frees the memory used by the structures
 void free_memory(comnd_strct **array) {
     for (comnd_strct **ptr = array; *ptr != NULL; ++ptr) {
-        for (char **ptr2 = (*ptr)->commands; *ptr2 != NULL; ++ptr2)
+        for (char **ptr2 = (*ptr)->commands; *ptr2 != NULL; ++ptr2) {
             free(*ptr2);
+            *ptr2 = NULL;
+        }
         free((*ptr)->commands);
+        (*ptr)->commands = NULL;
 
-        for (char **ptr2 = (*ptr)->redir_output; *ptr2 != NULL; ++ptr2)
+        for (char **ptr2 = (*ptr)->redir_output; *ptr2 != NULL; ++ptr2) {
             free(*ptr2);
+            *ptr2 = NULL;
+        }
         free((*ptr)->redir_output);
+        (*ptr)->redir_output = NULL;
     }
     free(array);
+    array = NULL;
 }
