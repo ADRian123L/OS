@@ -1,5 +1,4 @@
 #include "read_line.h"
-#include "vector.h"
 
 // Prompts
 comnd_strct **get_commands() {
