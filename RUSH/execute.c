@@ -1,4 +1,6 @@
 #include "execute.h"
+#include "error_check.h"
+#include <stdlib.h>
 
 // The function executes all commands:
 void execute_childs(comnd_strct **array) {
@@ -13,22 +15,33 @@ void execute_childs(comnd_strct **array) {
 void execute_child(comnd_strct *strct) {
 
     int pid = fork();
-    if (pid == -1) {
-        write(STDOUT_FILENO, error_message, strlen(error_message));
+    if (pid < 0) {
+        throw_error();
     }
     else if (pid == 0) {
-        // If the redirection operator was used:
+
+        // If the redirection operator was used :
         if (strct->redirection) {
             close(STDOUT_FILENO);
-            open(strct->redir_output[0], O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+            int rc = open(
+                strct->redir_output[0], O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+            if (rc == -1) {
+                throw_error();
+                exit(EXIT_FAILURE);
+            }
         }
-        // Check if the command exist if yes execute it:
+
+        // Check if the command exist if yes execute it :
         char *path = NULL;
-        if (command_exist(strct->commands[0], &path) &&
-            execv(path, strct->commands) == 0)
-            ;
-        else
-            write(STDOUT_FILENO, error_message, strlen(error_message));
+        if (command_exist(strct->commands[0], &path) == true) {
+            execv(path, strct->commands);
+            throw_error();
+            exit(EXIT_FAILURE);
+        }
+        else {
+            throw_error();
+            exit(EXIT_FAILURE); // Exit the child
+        }
     }
     else {
         wait(NULL);
@@ -46,7 +59,8 @@ bool command_exist(char *str, char **path) {
         strcat(*path, *ptr);
         strcat(*path, str);
 
-        if (access(*path, X_OK) == 0) return true;
+        if (access(*path, X_OK) == 0)
+            return true;
         free(*path);
         ++ptr;
     }

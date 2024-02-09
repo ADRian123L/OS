@@ -1,11 +1,12 @@
 #include "read_line.h"
+#include "error_check.h"
 
 // Prompts
 comnd_strct **get_commands() {
     // Prompt:
     char  *input = NULL;
     size_t num;
-    write(STDOUT_FILENO, PROMPT, strlen(PROMPT));
+    throw_error();
     getline(&input, &num, stdin);
 
     // Parse the input

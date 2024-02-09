@@ -1,32 +1,32 @@
+#include "error_check.h"
 #include "execute.h"
 #include "read_line.h"
 #include "vector.h"
 
 char **PATH;
-char  *error_message;
 
 int main(int argc, char *argv[]) {
-
-    error_message = strdup("An error has occurred\n");
+    // Throw an error if any arguments where passed to rush
     if (argc > 1) {
-        printf("%s", error_message);
-        fflush(stdout);
+        throw_error();
         return 1;
     }
-    // Vector for storing the paths
-    vec path_vec;
-    construct_string(&path_vec);
-    append_string(&path_vec, strdup("/bin/"));
-    append_string(&path_vec, strdup("user/bin/"));
-    append_string(&path_vec, NULL);
-    PATH = path_vec.string;
 
+    // Set the path to bin:
+    vec v1;
+    construct_string(&v1);
+    append_string(&v1, strdup("/bin/"));
+    append_string(&v1, NULL);
+    PATH = v1.string;
+
+    // Start the shell:
+    bool flag = true;
     do {
-        comnd_strct **arri = get_commands();
-        execute_childs(arri);
+        comnd_strct **array = get_commands();
+        execute_childs(array);
         fflush(stdout);
-        free_memory(arri);
-    } while (true);
+        free_memory(array);
+    } while (flag);
 
     return 0;
 }
