@@ -1,9 +1,9 @@
 CC=gcc
-CFLAGS=
+CFLAGS=-Wall -Wextra
 TARGET=rush
 
 # List of source files
-SOURCES=rush.c vector.c read_line.c execute.c
+SOURCES=rush.c vector.c read_line.c execute.c built_in.c error_check.c
 # Generate object file names by replacing the .c extensions with .o
 OBJECTS=$(SOURCES:.c=.o)
 

@@ -6,7 +6,7 @@ comnd_strct **get_commands() {
     // Prompt:
     char  *input = NULL;
     size_t num;
-    throw_error();
+    write(STDOUT_FILENO, PROMPT, strlen(PROMPT));
     getline(&input, &num, stdin);
 
     // Parse the input
@@ -45,11 +45,12 @@ comnd_strct **commands(char **array_strings) {
     // Separate the commands:
     char **ptr = array_strings, **from;
     for (from = ptr; *ptr != NULL; ++ptr)
-        if (**ptr == AMPER) {
+        if (**ptr == AMPER && strlen(*ptr) == 1) {
             append(&v1, command(from, ptr));
             from = ptr + 1;
         }
     append(&v1, command(from, ptr));
+    append(&v1, NULL);
 
     free_strings(array_strings);
     return v1.inputs_var;
@@ -66,13 +67,14 @@ comnd_strct *command(char **start, char **end) {
 
     // Create a string of the arguments
     char **ptr;
-    for (ptr = start; ptr < end && !strchr(*ptr, REDI); ++ptr)
+    for (ptr = start; ptr < end && **ptr != REDI; ++ptr)
         append_string(&v1, strdup(*ptr));
     append_string(&v1, NULL);
     if (*ptr != NULL && **ptr == REDI) {
         redi = true;
         for (char **ptr2 = ptr + 1; ptr2 < end; ++ptr2, count++)
             append_string(&v2, strdup(*ptr2));
+        append_string(&v2, NULL);
     }
 
     // Structure for storing command
@@ -103,7 +105,7 @@ void free_strings(char **array_string) {
 
 // The function frees the memory used by the structures
 void free_memory(comnd_strct **array) {
-    for (comnd_strct **ptr = array; *ptr != NULL; ++ptr) {
+    for (comnd_strct **ptr = array; ptr != NULL && *ptr != NULL; ++ptr) {
         for (char **ptr2 = (*ptr)->commands; *ptr2 != NULL; ++ptr2) {
             free(*ptr2);
             *ptr2 = NULL;

@@ -7,7 +7,10 @@
 #include <unistd.h>
 
 // Functions
-void throw_error();
-bool check_input(comnd_strct **);
+void         throw_error();
+void         check_input(comnd_strct ***);
+bool         check(comnd_strct *);
+comnd_strct *copyST(comnd_strct *);
+char       **cp_string(char **);
 
 #endif /* ERROR_CHECK_H */

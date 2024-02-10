@@ -1,3 +1,4 @@
+#include "built_in.h"
 #include "error_check.h"
 #include "execute.h"
 #include "read_line.h"
@@ -23,6 +24,8 @@ int main(int argc, char *argv[]) {
     bool flag = true;
     do {
         comnd_strct **array = get_commands();
+        check_input(&array);
+        built_in(&array);
         execute_childs(array);
         fflush(stdout);
         free_memory(array);

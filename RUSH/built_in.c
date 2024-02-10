@@ -2,35 +2,35 @@
 #include "error_check.h"
 #include "read_line.h"
 #include "vector.h"
+#include <stdlib.h>
 
 extern char **PATH;
 
-bool built_in(comnd_strct **struct_array) {
-    bool flag = true;
+void built_in(comnd_strct ***struct_array) {
 
     v_str v1;
     construct(&v1);
 
-    comnd_strct **ptr = struct_array;
-    while (*ptr != NULL) {
+    comnd_strct **ptr = *struct_array;
+    while (ptr != NULL && *ptr != NULL) {
         if (strcmp((*ptr)->commands[0], PTH) == 0)
             update_path(*ptr);
         else if (strcmp((*ptr)->commands[0], EXIT) == 0) {
-            flag = false;
-            ptr  = NULL;
-            free_memory(v1.inputs_var);
+            exit(EXIT_SUCCESS);
         }
         else if (strcmp((*ptr)->commands[0], CD) == 0) {
             change_dir(*ptr);
         }
         else {
             // Append to the new array structure
-            append(&v1, (*ptr));
+            append(&v1, copyST(*ptr));
         }
+        ++ptr;
     }
-    free_memory(struct_array);
-    struct_array = v1.inputs_var;
-    return flag;
+    append(&v1, NULL);
+
+    free_memory(*struct_array);
+    *struct_array = v1.inputs_var;
 }
 
 void update_path(comnd_strct *strct) {
