@@ -55,10 +55,12 @@ comnd_strct *strs(char **str) {
         append_string(&v1, strdup(*(ptr++)));
     append_string(&v1, NULL);
     if (*ptr != NULL && **ptr == REDI) {
-        redi = true;
-        for (ptr++; *ptr != NULL; ++ptr, count++)
-            append_string(&v2, strdup(*ptr));
+        redi         = true;
+        char **token = tokens(*ptr, ">");
+        for (char **ptrt = token; *ptrt != NULL; ++ptrt)
+            append_string(&v2, strdup(*ptrt));
         append_string(&v2, NULL);
+        free_strings(token);
     }
     free_strings(str);
     comnd_strct *new_strct = create_strct(v1.string, redi, v2.string, count);
