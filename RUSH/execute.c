@@ -57,10 +57,10 @@ bool command_exist(char *str, char **path) {
         *path       = (char *) calloc(size + 2, sizeof(char));
 
         strcat(*path, *ptr);
+        strcat(*path, "/");
         strcat(*path, str);
 
-        if (access(*path, X_OK) == 0)
-            return true;
+        if (access(*path, X_OK) == 0) return true;
         free(*path);
         ++ptr;
     }

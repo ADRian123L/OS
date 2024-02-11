@@ -6,8 +6,8 @@
 
 extern char **PATH;
 
-void built_in(comnd_strct ***struct_array) {
-
+bool built_in(comnd_strct ***struct_array) {
+    bool  flag = true;
     v_str v1;
     construct(&v1);
 
@@ -16,7 +16,10 @@ void built_in(comnd_strct ***struct_array) {
         if (strcmp((*ptr)->commands[0], PTH) == 0)
             update_path(*ptr);
         else if (strcmp((*ptr)->commands[0], EXIT) == 0) {
-            exit(EXIT_SUCCESS);
+            if ((*ptr)->commands[1] == NULL)
+                flag = false;
+            else
+                throw_error();
         }
         else if (strcmp((*ptr)->commands[0], CD) == 0) {
             change_dir(*ptr);
@@ -31,6 +34,7 @@ void built_in(comnd_strct ***struct_array) {
 
     free_memory(*struct_array);
     *struct_array = v1.inputs_var;
+    return flag;
 }
 
 void update_path(comnd_strct *strct) {
@@ -47,8 +51,7 @@ void update_path(comnd_strct *strct) {
 }
 
 void change_dir(comnd_strct *strct) {
-    if (strct->commands[1] == NULL || strct->commands[2] != NULL) {
-        if (chdir(strct->commands[1]) == -1)
-            throw_error();
+    if (strct->commands[1] != NULL || strct->commands[2] == NULL) {
+        if (chdir(strct->commands[1]) == -1) throw_error();
     }
 }

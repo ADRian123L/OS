@@ -9,7 +9,7 @@
 #define CD "cd"
 
 // Functions:
-void built_in(comnd_strct ***);
+bool built_in(comnd_strct ***);
 void update_path(comnd_strct *);
 void change_dir(comnd_strct *);
 

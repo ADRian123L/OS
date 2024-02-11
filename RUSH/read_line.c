@@ -8,31 +8,23 @@ comnd_strct **get_commands() {
     size_t num;
     write(STDOUT_FILENO, PROMPT, strlen(PROMPT));
     getline(&input, &num, stdin);
-
     // Parse the input
-    comnd_strct **array_struct = commands(tokens(input));
-
+    comnd_strct **array_struct = commands(tokens(input, AMPERS));
     // Release the memory:
     free(input);
-
     // Return the array of structures
     return array_struct;
 }
 
-// Parse the input into tokens:
-char **tokens(char *str) {
-    // Create a vector of strings to store the tokens:
+// The function separates a strings by some delimiter
+char **tokens(char *str, char *delims) {
     vec v1;
     construct_string(&v1);
-
-    // Separate the string into tokens
-    char *token = NULL;
-    while ((token = strsep(&str, " \t\n")) != NULL)
-        if (strcmp(token, NULLCHARS) != 0)
-            append_string(&v1, strdup(token));
+    // Separate the strings by some delimiter
+    char *token;
+    while ((token = strsep(&str, delims)) != NULL)
+        if (*token != ENDC) append_string(&v1, strdup(token));
     append_string(&v1, NULL);
-
-    // Return the array of strings
     return v1.string;
 }
 
@@ -41,43 +33,34 @@ comnd_strct **commands(char **array_strings) {
     // Create a vector to store the structures:
     v_str v1;
     construct(&v1);
-
     // Separate the commands:
-    char **ptr = array_strings, **from;
-    for (from = ptr; *ptr != NULL; ++ptr)
-        if (**ptr == AMPER && strlen(*ptr) == 1) {
-            append(&v1, command(from, ptr));
-            from = ptr + 1;
-        }
-    append(&v1, command(from, ptr));
+    char **ptr = array_strings;
+    while (*ptr != NULL)
+        append(&v1, strs(tokens(*(ptr++), " \t\n")));
     append(&v1, NULL);
-
+    // Return the array of structures
     free_strings(array_strings);
     return v1.inputs_var;
 }
 
-// The function stores each command's arguments
-comnd_strct *command(char **start, char **end) {
-    // Create a vector to store the strings
+comnd_strct *strs(char **str) {
     vec v1, v2;
     construct_string(&v1);
     construct_string(&v2);
     bool   redi  = false;
     size_t count = 0;
-
-    // Create a string of the arguments
-    char **ptr;
-    for (ptr = start; ptr < end && **ptr != REDI; ++ptr)
-        append_string(&v1, strdup(*ptr));
+    // Separate and create structures containing the commands
+    char **ptr = str;
+    while (*ptr != NULL && **ptr != REDI)
+        append_string(&v1, strdup(*(ptr++)));
     append_string(&v1, NULL);
     if (*ptr != NULL && **ptr == REDI) {
         redi = true;
-        for (char **ptr2 = ptr + 1; ptr2 < end; ++ptr2, count++)
-            append_string(&v2, strdup(*ptr2));
+        for (ptr++; *ptr != NULL; ++ptr, count++)
+            append_string(&v2, strdup(*ptr));
         append_string(&v2, NULL);
     }
-
-    // Structure for storing command
+    free_strings(str);
     comnd_strct *new_strct = create_strct(v1.string, redi, v2.string, count);
     return new_strct;
 }
