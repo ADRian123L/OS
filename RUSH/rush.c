@@ -25,27 +25,25 @@ int main(int argc, char *argv[]) {
     do {
         comnd_strct **array = get_commands();
 
-        //        for (comnd_strct **ptr = array; *ptr != NULL; ++ptr) {
-        //            for (char **ptr1 = (*ptr)->redir_output; *ptr1 != NULL;
-        //            ++ptr1) {
-        //                printf("COMMAND [%s]\n", *ptr1);
-        //            }
-        //            printf("The [%ld] command\n", (ptr - array));
-        //        }
-        //
-        //        printf("\n AFTER check_input \n\n");
-        //
+        //  for (comnd_strct **ptr = array; *ptr != 0 && *ptr != NULL; ++ptr) {
+        //      for (char **ptr1 = (*ptr)->commands; *ptr1 != NULL; ++ptr1) {
+        //          printf("COMMAND [%s]\n", *ptr1);
+        //      }
+        //      printf("There is a Comand!\n");
+        //  }
         check_input(&array);
-        //
-        //        for (comnd_strct **ptr = array; *ptr != NULL; ++ptr) {
-        //            for (char **ptr1 = (*ptr)->commands; *ptr1 != NULL;
-        //            ++ptr1) {
-        //                printf("COMMAND2 [%s]\n", *ptr1);
-        //            }
-        //            printf("The [%ld] command\n", (ptr - array));
-        //        }
+
+        //      printf("Second\n");
+        //  for (comnd_strct **ptr = array; *ptr != NULL; ++ptr) {
+        //      for (char **ptr1 = (*ptr)->redir_output; *ptr1 != NULL; ++ptr1)
+        //      {
+        //          printf("COMMAND2 [%s]\n", *ptr1);
+        //      }
+        //      printf("The [%ld] command\n", (ptr - array));
+        //  }
 
         flag = built_in(&array);
+        fflush(stdout);
         execute_childs(array);
         fflush(stdout);
         free_memory(array);

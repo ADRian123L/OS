@@ -1,5 +1,6 @@
 #include "read_line.h"
 #include "error_check.h"
+#include <string.h>
 
 // Prompts
 comnd_strct **get_commands() {
@@ -9,7 +10,7 @@ comnd_strct **get_commands() {
     write(STDOUT_FILENO, PROMPT, strlen(PROMPT));
     getline(&input, &num, stdin);
     // Parse the input
-    comnd_strct **array_struct = commands(tokens(input, AMPERS));
+    comnd_strct **array_struct = commands(tokens(input, "&\n", false));
     // Release the memory:
     free(input);
     // Return the array of structures
@@ -17,13 +18,18 @@ comnd_strct **get_commands() {
 }
 
 // The function separates a strings by some delimiter
-char **tokens(char *str, char *delims) {
+char **tokens(char *str, char *delims, bool clean) {
     vec v1;
     construct_string(&v1);
     // Separate the strings by some delimiter
-    char *token;
-    while ((token = strsep(&str, delims)) != NULL)
-        if (*token != ENDC) append_string(&v1, strdup(token));
+    char *token, *tmp;
+    while ((token = strsep(&str, delims)) != NULL) {
+        tmp = cleaner(strdup(token));
+        if (*token != ENDC && !clean)
+            append_string(&v1, strdup(token));
+        else if (*token != ENDC && strpbrk(tmp, " \t") == NULL)
+            append_string(&v1, tmp);
+    }
     append_string(&v1, NULL);
     return v1.string;
 }
@@ -34,13 +40,27 @@ comnd_strct **commands(char **array_strings) {
     v_str v1;
     construct(&v1);
     // Separate the commands:
-    char **ptr = array_strings;
-    while (*ptr != NULL)
-        append(&v1, strs(tokens(*(ptr++), " \t\n")));
+    char **ptr = array_strings, **tmp;
+    while (*ptr != NULL && **ptr != '\0')
+        if ((tmp = tokens(*(ptr++), " \t\n", true)) != NULL && *tmp != NULL)
+            append(&v1, strs(tmp));
     append(&v1, NULL);
     // Return the array of structures
     free_strings(array_strings);
     return v1.inputs_var;
+}
+
+char *cleaner(char *str) {
+    char *dst   = str; // Destination to copy characters to
+    char *start = str; // Save start address to return the correct pointer
+    while (*str != '\0') {
+        if (*str != ' ' && *str != '\t') { // Check for non-space/tab character
+            *dst++ = *str;                 // Copy character
+        }
+        str++; // Move to next character
+    }
+    *dst = '\0';  // Null-terminate the cleaned string
+    return start; // Return the start of the string, not str
 }
 
 comnd_strct *strs(char **str) {

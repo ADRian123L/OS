@@ -10,14 +10,13 @@ bool built_in(comnd_strct ***struct_array) {
     bool  flag = true;
     v_str v1;
     construct(&v1);
-
     comnd_strct **ptr = *struct_array;
-    while (ptr != NULL && *ptr != NULL) {
+    while (*ptr != NULL) {
         if (strcmp((*ptr)->commands[0], PTH) == 0)
             update_path(*ptr);
         else if (strcmp((*ptr)->commands[0], EXIT) == 0) {
             if ((*ptr)->commands[1] == NULL)
-                flag = false;
+                exit(1); // flag = false;
             else
                 throw_error();
         }
@@ -31,7 +30,6 @@ bool built_in(comnd_strct ***struct_array) {
         ++ptr;
     }
     append(&v1, NULL);
-
     free_memory(*struct_array);
     *struct_array = v1.inputs_var;
     return flag;

@@ -30,11 +30,12 @@ typedef struct inputs {
 
 // Functions:
 comnd_strct **get_commands();
-char        **tokens(char *, char *);
+char        **tokens(char *, char *, bool);
 comnd_strct **commands(char **);
 comnd_strct  *strs(char **);
 void          free_memory(comnd_strct **);
 comnd_strct  *create_strct(char **, bool, char **, size_t);
+char         *cleaner(char *);
 void          free_strings(char **);
 
 #endif /* READ_LINE_H */

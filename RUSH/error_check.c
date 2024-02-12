@@ -28,21 +28,11 @@ void check_input(comnd_strct ***strct) {
 }
 
 bool check(comnd_strct *strct) {
-    if (strct->num_outputs > 1) {
-        for (size_t i = 0; i < strct->num_outputs - 2; ++i)
-            throw_error();
-    }
+    if (strct->num_outputs > 1) throw_error();
     if (!strct->redirection && strct->num_outputs > 0) return false;
     if (strct->redirection && strchr(strct->redir_output[0], '>')) return false;
-
-    char **ptr = strct->commands;
-    while (*ptr != NULL) {
-        if (strpbrk(*ptr, ">&") != NULL) {
-            return false;
-        }
-        ++ptr;
-    }
-
+    for (char **ptr = strct->commands; *ptr != NULL; ++ptr)
+        if (strpbrk(*ptr, ">&") != NULL) return false;
     return true;
 }
 
