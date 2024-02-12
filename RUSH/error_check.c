@@ -9,10 +9,9 @@ void throw_error() {
 }
 
 void check_input(comnd_strct ***strct) {
-
+    // A new array of structures
     v_str v1;
     construct(&v1);
-
     comnd_strct **ptr = *strct;
     while (ptr != NULL && *ptr != NULL) {
         if (check(*ptr))
@@ -34,8 +33,7 @@ bool check(comnd_strct *strct) {
             throw_error();
     }
     if (!strct->redirection && strct->num_outputs > 0) return false;
-    if (strct->redirection && strpbrk(strct->redir_output[0], ">&"))
-        return false;
+    if (strct->redirection && strchr(strct->redir_output[0], '>')) return false;
 
     char **ptr = strct->commands;
     while (*ptr != NULL) {

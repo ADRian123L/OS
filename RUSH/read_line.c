@@ -54,13 +54,13 @@ comnd_strct *strs(char **str) {
     while (*ptr != NULL && **ptr != REDI)
         append_string(&v1, strdup(*(ptr++)));
     append_string(&v1, NULL);
+    // Check for redirection
     if (*ptr != NULL && **ptr == REDI) {
-        redi         = true;
-        char **token = tokens(*ptr, ">");
-        for (char **ptrt = token; *ptrt != NULL; ++ptrt)
-            append_string(&v2, strdup(*ptrt));
+        redi = true;
+        char **token;
+        for (token = ptr + 1; *token != NULL; count++)
+            append_string(&v2, strdup(*(token++)));
         append_string(&v2, NULL);
-        free_strings(token);
     }
     free_strings(str);
     comnd_strct *new_strct = create_strct(v1.string, redi, v2.string, count);
