@@ -14,6 +14,7 @@ typedef struct vector {
     char **string;
 } vec;
 
+// Structure
 typedef struct vector_struct {
     size_t          capacity;
     size_t          size;

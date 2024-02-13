@@ -1,6 +1,7 @@
 #ifndef EXECUTE_H
 #define EXECUTE_H
 
+#include "error_check.h"
 #include "read_line.h"
 #include <fcntl.h>
 #include <stdbool.h>

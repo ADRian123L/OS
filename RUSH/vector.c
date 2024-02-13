@@ -23,6 +23,7 @@ void append(v_str *vec, struct inputs *input) {
     vec->size++;
 }
 
+// The function constructs the vector.
 void construct(v_str *object) {
     object->capacity = 15;
     object->size     = 0;
@@ -30,6 +31,7 @@ void construct(v_str *object) {
         (struct inputs **) calloc(object->capacity, sizeof(struct inputs *));
 }
 
+// The function constructs the string vector.
 void construct_string(vec *object) {
     object->capacity = 15;
     object->size     = 0;

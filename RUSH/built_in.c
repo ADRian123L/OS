@@ -1,11 +1,8 @@
 #include "built_in.h"
-#include "error_check.h"
-#include "read_line.h"
-#include "vector.h"
-#include <stdlib.h>
 
-extern char **PATH;
+extern char **PATH; // The path to bin
 
+// The function checks if the input is a built-in command
 bool built_in(comnd_strct ***struct_array) {
     bool  flag = true;
     v_str v1;
@@ -14,19 +11,16 @@ bool built_in(comnd_strct ***struct_array) {
     while (*ptr != NULL) {
         if (strcmp((*ptr)->commands[0], PTH) == 0)
             update_path(*ptr);
-        else if (strcmp((*ptr)->commands[0], EXIT) == 0) {
+        else if (strcmp((*ptr)->commands[0], EXIT) == 0)
             if ((*ptr)->commands[1] == NULL)
-                exit(1); // flag = false;
+                flag = false;
             else
                 throw_error();
-        }
-        else if (strcmp((*ptr)->commands[0], CD) == 0) {
+        else if (strcmp((*ptr)->commands[0], CD) == 0)
             change_dir(*ptr);
-        }
-        else {
+        else
             // Append to the new array structure
             append(&v1, copyST(*ptr));
-        }
         ++ptr;
     }
     append(&v1, NULL);
@@ -35,6 +29,7 @@ bool built_in(comnd_strct ***struct_array) {
     return flag;
 }
 
+// The function updates the path
 void update_path(comnd_strct *strct) {
     vec v1;
     construct_string(&v1);
@@ -48,8 +43,10 @@ void update_path(comnd_strct *strct) {
     PATH = v1.string;
 }
 
+// The function changes the directory
 void change_dir(comnd_strct *strct) {
     if (strct->commands[1] != NULL || strct->commands[2] == NULL) {
-        if (chdir(strct->commands[1]) == -1) throw_error();
+        if (chdir(strct->commands[1]) == -1)
+            throw_error();
     }
 }

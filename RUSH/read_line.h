@@ -37,5 +37,6 @@ void          free_memory(comnd_strct **);
 comnd_strct  *create_strct(char **, bool, char **, size_t);
 char         *cleaner(char *);
 void          free_strings(char **);
+bool          check(comnd_strct *);
 
 #endif /* READ_LINE_H */

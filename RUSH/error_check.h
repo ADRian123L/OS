@@ -1,6 +1,7 @@
 #ifndef ERROR_CHECK_H
 #define ERROR_CHECK_H
 
+#include "error_check.h"
 #include "execute.h"
 #include "read_line.h"
 #include <stdio.h>

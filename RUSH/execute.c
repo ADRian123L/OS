@@ -1,22 +1,16 @@
 #include "execute.h"
-#include "error_check.h"
-#include "vector.h"
-#include <stdlib.h>
 
 // The function executes all commands:
 void execute_childs(comnd_strct **array) {
     comnd_strct **ptr = array;
-    char          nums[15];
-    vec           number;
-    construct_string(&number);
-    while (*ptr != NULL) {
-        sprintf(nums, "%d", execute_child(*ptr));
-        append_string(&number, nums);
-        ++ptr;
-    }
-    char **pt = number.string;
-    while (*pt != NULL)
-        waitpid(atoi(*(pt++)), NULL, 0);
+    int           pids[200], counter = 0;
+    int           rc;
+    while (*ptr != NULL)
+        if ((rc = execute_child(*(ptr++))) >= 0)
+            pids[counter++] = rc;
+    int tmp = 0;
+    while (tmp < counter)
+        waitpid(pids[tmp++], NULL, 0);
 }
 
 // The function executes each command
@@ -50,24 +44,21 @@ int execute_child(comnd_strct *strct) {
             exit(EXIT_FAILURE); // Exit the child
         }
     }
-    else {
+    else
         return pid;
-    }
 }
 
 // The function checks if a command exist
 bool command_exist(char *str, char **path) {
     char **ptr = PATH;
     while (*ptr != NULL) {
-
         size_t size = strlen(*ptr) + strlen(str);
         *path       = (char *) calloc(size + 2, sizeof(char));
-
         strcat(*path, *ptr);
         strcat(*path, "/");
         strcat(*path, str);
-
-        if (access(*path, X_OK) == 0) return true;
+        if (access(*path, X_OK) == 0)   
+            return true; // If the command exist
         free(*path);
         ++ptr;
     }

@@ -1,6 +1,7 @@
 #ifndef BUILT_IN_H
 #define BUILT_IN_H
 
+#include "error_check.h"
 #include "read_line.h"
 
 // Macros:

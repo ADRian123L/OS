@@ -1,6 +1,4 @@
 #include "read_line.h"
-#include "error_check.h"
-#include <string.h>
 
 // Prompts
 comnd_strct **get_commands() {
@@ -50,19 +48,20 @@ comnd_strct **commands(char **array_strings) {
     return v1.inputs_var;
 }
 
+// The function removes the white spaces and tabs from a string
 char *cleaner(char *str) {
-    char *dst   = str; // Destination to copy characters to
-    char *start = str; // Save start address to return the correct pointer
+    char *dst   = str;
+    char *start = str;
     while (*str != '\0') {
-        if (*str != ' ' && *str != '\t') { // Check for non-space/tab character
-            *dst++ = *str;                 // Copy character
-        }
-        str++; // Move to next character
+        if (*str != ' ' && *str != '\t')
+            *dst++ = *str;
+        str++;
     }
-    *dst = '\0';  // Null-terminate the cleaned string
+    *dst = '\0';
     return start; // Return the start of the string, not str
 }
 
+// The function creates a structure object
 comnd_strct *strs(char **str) {
     vec v1, v2;
     construct_string(&v1);
