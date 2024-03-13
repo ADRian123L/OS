@@ -1,4 +1,5 @@
 #include <dirent.h> 
+#include <pthread.h>
 #include <stdio.h> 
 #include <assert.h>
 #include <stdlib.h>
@@ -7,6 +8,48 @@
 #include <time.h>
 
 #define BUFFER_SIZE 1048576 // 1MB
+
+// Declarations:
+typedef struct __arg_t;
+
+typedef struct __queue_t {
+	char **array;
+	size_t start_index;
+	size_t end_index;
+	size_t size;
+	size_t capacity;
+	pthread_mutex_t lock;
+	pthread_cond_t empty;
+	pthread_cond_t full;
+} queue_t;
+typedef struct __arg_t {
+	char **files;
+} arg_t;
+
+// Functions:
+int init(queue_t *queue) {
+	queue->array = (char **) malloc(sizeof(char *) * 15);
+	assert(queue->array != NULL);
+	queue->capacity = 15;
+	queue->size = 0;
+	queue->start_index = 0;
+	queue->end_index = 0;
+	pthread_mutex_init(&queue->lock, NULL);
+	pthread_cond_init(&queue->empty, NULL);
+	pthread_cond_init(&queue->full, NULL);
+}
+
+int enqueue(arg_t val, queue_t *queue) {
+	arg_t *new = (arg_t *) malloc(sizeof(arg_t));	
+	assert(new != NULL);
+	*new = val;
+	pthread_mutex_lock(&queue->lock);
+		
+}
+
+void *producer(void *arg){
+	return NULL;	
+}
 
 int cmp(const void *a, const void *b) {
 	return strcmp(*(char **) a, *(char **) b);
@@ -24,8 +67,12 @@ int main(int argc, char **argv) {
 
 	DIR *d;
 	struct dirent *dir;
-	char **files = NULL;
+	char **files = (char **) malloc(sizeof(char *) * 100);
+	assert(files != NULL);
 	int nfiles = 0;
+
+	// Declare the threads:
+	pthread_t t[20];
 
 	d = opendir(argv[1]);
 	if(d == NULL) {
@@ -33,12 +80,13 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 
+	// Read images:
 	while ((dir = readdir(d)) != NULL) {
-		files = realloc(files, (nfiles+1)*sizeof(char *));
-		assert(files != NULL);
+		//files = realloc(files, (nfiles + 1) * sizeof(char *));
+		//assert(files != NULL);
 
 		int len = strlen(dir->d_name);
-		if(dir->d_name[len-4] == '.' && dir->d_name[len-3] == 'p' && dir->d_name[len-2] == 'p' && dir->d_name[len-1] == 'm') {
+		if(dir->d_name[len - 4] == '.' && dir->d_name[len - 3] == 'p' && dir->d_name[len - 2] == 'p' && dir->d_name[len - 1] == 'm') {
 			files[nfiles] = strdup(dir->d_name);
 			assert(files[nfiles] != NULL);
 
@@ -52,11 +100,11 @@ int main(int argc, char **argv) {
 	int total_in = 0, total_out = 0;
 	FILE *f_out = fopen("video.vzip", "w");
 	assert(f_out != NULL);
-	for(int i=0; i < nfiles; i++) {
-		int len = strlen(argv[1])+strlen(files[i])+2;
-		char *full_path = malloc(len*sizeof(char));
-		assert(full_path != NULL);
-		strcpy(full_path, argv[1]);
+	for(int i = 0; i < nfiles; i++) {
+		int len = strlen(argv[1]) + strlen(files[i]) + 2; // Get the size of the name + size of the image
+		char *full_path = malloc(len * sizeof(char)); // Allocate memory with the same size
+		assert(full_path != NULL); 
+		strcpy(full_path, argv[1]); // Copy the file into the new allocated space
 		strcat(full_path, "/");
 		strcat(full_path, files[i]);
 
