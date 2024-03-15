@@ -139,6 +139,8 @@ int main(int argc, char **argv) {
 		pthread_join(t[i], NULL);
 	// Close the directory:
 	closedir(entries);
+	for (int i = 0; i < 5; ++i)
+		printf("size:  %zu\n", que[i].size);
 	/*
 	// Write the files:
 	while(!isEmpty(&q2)) {
