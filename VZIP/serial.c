@@ -7,16 +7,119 @@
 #include <zlib.h>
 #include <time.h>
 #include <string.h>
-#include "queue.h"
 
 #define BUFFER_SIZE 1048576 // 1MB
 #define THRDS_F 1
 #define THRDS_C 1
 #define TH_TOTAL (THRDS_C + THRDS_F)
 
+// Queue.h
+pthread_cond_t not_empty;
+
+// Structure declarations:
+typedef struct _temp temp_t;
+typedef struct _queue_t queue_t;
+typedef struct _arg_t arg_t;
+
+typedef struct _temp {
+	unsigned char *ptr;
+	z_stream *strm;
+	char *name;
+	int done;
+
+} temp_t;
+
+// Thread Argument
+typedef struct _arg_t {
+	queue_t *que1;
+	queue_t *que2;
+	DIR *dir;
+	char ** argv;
+} arg_t;
+
+typedef struct _queue_t {
+	temp_t **array;
+	size_t insert_index;
+	size_t delete_index;
+	size_t size;
+	size_t capacity;
+	pthread_mutex_t lock;
+	pthread_cond_t not_empty;
+} queue_t;
+
+
+// Function declarations:
+int isFull(queue_t *q);
+int isEmpty(queue_t *q);
+int enqueue(temp_t *obj, queue_t *queue);
+int init(queue_t *queue);
+temp_t *dequeue(queue_t *queue);
+int isEmptyT(queue_t *q);
+
+// Queue.c
+pthread_mutex_t dir_lock;
+
+
+int isFull(queue_t *q) {
+	if (q->size >= q->capacity - 1)
+		return 1;
+	return 0;
+}
+
+int isEmpty(queue_t *q) {
+	if (q->size == 0)
+		return 1;
+	else 
+		return 0;
+}
+
+
+int enqueue(temp_t *obj, queue_t *queue) {
+	pthread_mutex_lock(&queue->lock);
+	if (isFull(queue)){
+		queue->array = (temp_t **) realloc(queue->array, sizeof(temp_t *) * queue->capacity * 2);
+		assert(queue->array != NULL);
+		queue->capacity *= 2;
+	}
+	queue->size++;
+	queue->array[queue->insert_index] = obj;
+	queue->insert_index++;
+	queue->insert_index %= queue->capacity;
+	pthread_cond_signal(&queue->not_empty);
+	pthread_mutex_unlock(&queue->lock);	
+	return 1;
+}
+
+int init(queue_t *queue) {
+    queue->array = (temp_t **) malloc(sizeof(temp_t *) * 15);
+	assert(queue->array != NULL);
+	queue->capacity = 15;
+	queue->size = 0;
+	queue->insert_index = 0;
+	queue->delete_index = 0;
+	pthread_mutex_init(&queue->lock, NULL);
+	pthread_cond_init(&queue->not_empty, NULL);
+	return 1;
+}
+
+temp_t *dequeue(queue_t *queue) {
+	pthread_mutex_lock(&queue->lock);
+	while (isEmpty(queue)) 
+        pthread_cond_wait(&not_empty, &queue->lock);
+
+	temp_t *tmp = queue->array[queue->delete_index];
+	queue->size--;
+	queue->delete_index++;
+	queue->delete_index %= queue->capacity;
+	pthread_mutex_unlock(&queue->lock);
+	return tmp;
+}
+
+
+//
 int done;
 pthread_mutex_t done_lock;
-pthread_cond_t not_empty;
+extern pthread_cond_t not_empty;
 
 void *file_producer(void *arg) {
 	arg_t *t = (arg_t *) arg;
@@ -33,7 +136,7 @@ void *file_producer(void *arg) {
 			new->ptr = image;
 			enqueue(new, &t->que1[que]);
 			que++;
-			que %= 1;
+			que %= 18;
 		}
 		dir = readdir(t->dir);
 	}
@@ -133,13 +236,15 @@ int main(int argc, char **argv) {
 	// Declared the threads and locks:
 	done = 0;
 	pthread_mutex_init(&done_lock, NULL);
-	pthread_t t[20]; 
+	pthread_t t[19]; 
 	// Create the queues:
-	queue_t que[THRDS_F];
-	queue_t que_out[1];
-	for (int i = 0; i < THRDS_F; ++i)
-		init(&que[i]);
-	init(&que_out[0]);
+	queue_t ques[19];
+	queue_t que_outs[19];
+	for (int i = 0; i < 19; ++i)
+		init(&ques[i]);
+    for (int i = 0; i < 19; i++){
+        init(&que_outs[i]);
+    }
 	// Open the image directory:
 	DIR *entries = opendir(argv[1]);
 	assert(entries != NULL);
@@ -147,7 +252,7 @@ int main(int argc, char **argv) {
 	arg_t *arg = (arg_t *) malloc(sizeof(arg_t));
 	assert(arg != NULL);
 	arg->dir = entries;
-	arg->que1 = (queue_t *) &que;
+	arg->que1 = (queue_t *) &ques;
 	pthread_create(&t[0], NULL, file_producer, arg);
 	
 	// create a single zipped package with all PPM files in lexicographical order
@@ -156,32 +261,39 @@ int main(int argc, char **argv) {
 	assert(f_out != NULL);
 	//call the compressor;
 	//pthread_join(t[0], NULL);
-	printf("The size of queue 1: %zu\n", que[0].size);
-	//for (int i = 1; i < 2; i++) {
-		arg_t *arg2 = (arg_t *) malloc(sizeof(arg_t));
+
+	for (int i = 1; i < 19; i++) {
+	    arg_t *arg2 = (arg_t *) malloc(sizeof(arg_t));
 		//assert(arg2 != NULL);
-		arg2->que1 = &que[0];
-		arg2->que2 = &que_out[0];
-		arg2->argv = argv;
-		pthread_create(&t[1], NULL, compressor2, arg2);
-	//}
+	    arg2->que1 = &ques[i - 1];
+	    arg2->que2 = &que_outs[i];
+	    arg2->argv = argv;
+	    pthread_create(&t[i], NULL, compressor2, arg2);
+	}
 	// Join threads:
-	pthread_join(t[0], NULL);
-	pthread_join(t[1], NULL);
-	/*
-	for (int i = 1; i < 2; ++i)
-		pthread_join(t[i], NULL);
-	*/
+    for (int i = 0; i < 19; i++){
+        pthread_join(t[i], NULL);
+    }
+	
+	
 	// Close the directory:
 	closedir(entries);
-	
-	printf("size:  %zu\n", que_out[0].size);
+
+    for (int i = 1; i < 19; i++){
+
+        while (!isEmpty(&que_outs[i])){
+            temp_t *a = dequeue(&que_outs[i]);
+            enqueue(a, &que_outs[0]);
+        }
+    }
 	
 	// Write the files:
 
-	qsort(que_out[0].array, que_out[0].size, sizeof(temp_t *), cmp);
-	while(!isEmpty(&que_out[0])) {
-		temp_t *tmp = dequeue(&que_out[0]);
+	qsort(que_outs[0].array, que_outs[0].size, sizeof(temp_t *), cmp);
+   
+    
+	while(!isEmpty(&que_outs[0])) {
+		temp_t *tmp = dequeue(&que_outs[0]);
 		// dump zipped file
 		int nbytes_zipped = BUFFER_SIZE - tmp->strm->avail_out;
 		fwrite(&nbytes_zipped, sizeof(int), 1, f_out);

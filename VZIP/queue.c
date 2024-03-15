@@ -1,7 +1,7 @@
 #include "queue.h"
 
 pthread_mutex_t dir_lock;
-pthread_cond_t not_empty;
+
 
 int isFull(queue_t *q) {
 	if (q->size >= q->capacity - 1)

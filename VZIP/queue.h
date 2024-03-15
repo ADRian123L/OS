@@ -8,6 +8,7 @@
 #include <dirent.h>
 #include <assert.h>
 
+pthread_cond_t not_empty;
 
 // Structure declarations:
 typedef struct _temp temp_t;
