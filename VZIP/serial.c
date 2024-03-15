@@ -119,7 +119,6 @@ temp_t *dequeue(queue_t *queue) {
 //
 int done;
 pthread_mutex_t done_lock;
-extern pthread_cond_t not_empty;
 
 void *file_producer(void *arg) {
 	arg_t *t = (arg_t *) arg;
@@ -159,7 +158,7 @@ void *compressor2(void *arg) {
 	while (done == 0 || !isEmpty(t->que1)) { 
 		pthread_mutex_unlock(&done_lock);
 		temp_t *tmp = dequeue(t->que1);
-		char *ptr = tmp->ptr;
+		char *ptr = (char *) tmp->ptr;
 		char *name = (char *) calloc(sizeof(char), 100);
 		assert(name != NULL);
 		int counter = 0;
@@ -170,14 +169,14 @@ void *compressor2(void *arg) {
 		}
 		unsigned char *buffer = tmp->ptr;
 
-		int len = strlen(t->argv[1]) + strlen(buffer) + 2; // Get the size of the name + size of the image
+		int len = strlen(t->argv[1]) + strlen((char *) buffer) + 2; // Get the size of the name + size of the image
 	
 		char *full_path = malloc(len * sizeof(char)); // Allocate memory with the same size
 		assert(full_path != NULL); 
 		
 		strcpy(full_path, t->argv[1]); // Copy the file into the new allocated space
 		strcat(full_path, "/");
-		strcat(full_path, buffer);
+		strcat(full_path, (char *) buffer);
 		
 		unsigned char *buffer_in = (unsigned char*) malloc(sizeof(unsigned char) * BUFFER_SIZE);		
 		
@@ -256,7 +255,6 @@ int main(int argc, char **argv) {
 	pthread_create(&t[0], NULL, file_producer, arg);
 	
 	// create a single zipped package with all PPM files in lexicographical order
-	int total_in = 0, total_out = 0;
 	FILE *f_out = fopen("video.vzip", "w");
 	assert(f_out != NULL);
 	//call the compressor;
@@ -291,14 +289,14 @@ int main(int argc, char **argv) {
 
 	qsort(que_outs[0].array, que_outs[0].size, sizeof(temp_t *), cmp);
    
-    
+    int total_out = 0;
 	while(!isEmpty(&que_outs[0])) {
 		temp_t *tmp = dequeue(&que_outs[0]);
 		// dump zipped file
 		int nbytes_zipped = BUFFER_SIZE - tmp->strm->avail_out;
 		fwrite(&nbytes_zipped, sizeof(int), 1, f_out);
 		fwrite(tmp->ptr, sizeof(unsigned char), nbytes_zipped, f_out);
-		total_out += nbytes_zipped;
+		total_out = nbytes_zipped + total_out;
 	}
 	fclose(f_out);
 	
