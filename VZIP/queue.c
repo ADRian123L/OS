@@ -1,6 +1,7 @@
 #include "queue.h"
 
 pthread_mutex_t dir_lock;
+pthread_cond_t not_empty;
 
 int isFull(queue_t *q) {
 	if (q->size >= q->capacity - 1)
@@ -14,6 +15,7 @@ int isEmpty(queue_t *q) {
 	else 
 		return 0;
 }
+
 
 int enqueue(temp_t *obj, queue_t *queue) {
 	pthread_mutex_lock(&queue->lock);
@@ -45,10 +47,9 @@ int init(queue_t *queue) {
 
 temp_t *dequeue(queue_t *queue) {
 	pthread_mutex_lock(&queue->lock);
-	if (isEmpty(queue) == 1){
-		pthread_mutex_unlock(&queue->lock);
-		return NULL;
-	}
+	while (isEmpty(queue)) 
+        pthread_cond_wait(&not_empty, &queue->lock);
+
 	temp_t *tmp = queue->array[queue->delete_index];
 	queue->size--;
 	queue->delete_index++;

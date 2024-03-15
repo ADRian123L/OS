@@ -16,7 +16,9 @@ typedef struct _arg_t arg_t;
 
 typedef struct _temp {
 	unsigned char *ptr;
-	z_stream * strm;
+	z_stream *strm;
+	char *name;
+	int done;
 
 } temp_t;
 
@@ -44,6 +46,8 @@ int isFull(queue_t *q);
 int isEmpty(queue_t *q);
 int enqueue(temp_t *obj, queue_t *queue);
 int init(queue_t *queue);
+temp_t *dequeue(queue_t *queue);
+int isEmptyT(queue_t *q);
 
 
 #endif // QUEUE_H
