@@ -1,57 +1,6 @@
-#include <dirent.h> 
-#include <pthread.h>
-#include <stdio.h> 
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
-#include <zlib.h>
-#include <time.h>
+#include "serial.h"
 
-#define numberOfT 7
-
-
-
-#define BUFFER_SIZE 1048576 // 1MB
-int total_in = 0;
-
-// Structure declarations:
-typedef struct _temp temp_t;
-typedef struct _queue_t queue_t;
-typedef struct _arg_t arg_t;
-
-typedef struct _temp {
-	unsigned char *ptr;
-	z_stream *strm;
-	char *name;
-	int done;
-	int empty;
-	pthread_mutex_t node_lock;
-	pthread_cond_t wake;
-} temp_t;
-
-// Thread Argument
-typedef struct _arg_t {
-	queue_t *que1;
-	queue_t *que2;
-	DIR *dir;
-	char ** argv;
-} arg_t;
-
-typedef struct _queue_t {
-	temp_t **array;
-	size_t insert_index;
-	size_t delete_index;
-	size_t size;
-	size_t capacity;
-} queue_t;
-
-
-int isFull(queue_t *q) {
-	if (q->size >= q->capacity - 1)
-		return 1;
-	return 0;
-}
-
+// Check if the queue is empty
 int isEmpty(queue_t *q) {
 	if (q->size == 0)
 		return 1;
@@ -65,23 +14,22 @@ int enqueue(temp_t *obj, queue_t *queue);
 int init(queue_t *queue);
 temp_t dequeue(queue_t *queue);
 
+// Enqueue function
 int enqueue(temp_t *obj, queue_t *queue) {
 	pthread_mutex_lock(&(queue->array[queue->insert_index]->node_lock));
-	
 	queue->array[queue->insert_index]->done = obj->done;
 	queue->array[queue->insert_index]->empty = obj->empty;
 	queue->array[queue->insert_index]->ptr = obj->ptr;
 	queue->array[queue->insert_index]->name = obj->name;
 	queue->array[queue->insert_index]->strm = obj->strm;
-
 	queue->insert_index++;
 	queue->size++;
-	
 	pthread_cond_signal(&queue->array[queue->insert_index - 1]->wake);
 	pthread_mutex_unlock(&queue->array[queue->insert_index - 1]->node_lock);	
 	return 1;
 }
 
+// Initialize the queue
 int init(queue_t *queue) {
     queue->array = (temp_t **) malloc(750 * sizeof(temp_t *));
 	assert(queue->array != NULL);
@@ -90,7 +38,6 @@ int init(queue_t *queue) {
 	queue->insert_index = 0;
 	queue->delete_index = 0;
 	for (int i = 0; i < 750; ++i) {
-		
 		temp_t *new = (temp_t *) malloc(sizeof(temp_t));
 		assert(new != NULL);
 		new->done = 0;
@@ -102,10 +49,9 @@ int init(queue_t *queue) {
 	return 1;
 }
 
+// Dequeue function
 temp_t dequeue(queue_t *queue) {
-
 	pthread_mutex_lock(&queue->array[queue->delete_index]->node_lock);
-
 	while (queue->array[queue->delete_index]->empty && !queue->array[queue->delete_index]->done)
 		pthread_cond_wait(&queue->array[queue->delete_index]->wake, &queue->array[queue->delete_index]->node_lock);
 	temp_t tmp = *queue->array[queue->delete_index];
@@ -116,59 +62,54 @@ temp_t dequeue(queue_t *queue) {
 	return tmp;
 }
 
+// File producer function
 void *file_producer(void *arg) {
 	arg_t *t = (arg_t *) arg;
 	struct dirent *dir = NULL;
 	unsigned char *image = NULL;
-
 	dir = readdir(t->dir);
 	int que = 0;
 	while (dir != NULL) {
-		
 		// Copy the image into a struct then enqueue:
 		if (strstr(dir->d_name, ".ppm") != NULL) {
 			image = (unsigned char *) strdup(dir->d_name);
-			
 			assert(image != NULL);
 			temp_t new;
 			new.ptr = image;
 			new.empty = 0;
 			new.done = 0;
-
 			enqueue(&new, &t->que1[que]);
-
 			que++;
 			que %= numberOfT - 1;
 		}
 		dir = readdir(t->dir);
 	}
-	
+	// Signal the compressors when the copy function is done
 	for (int i = 0; i < numberOfT; ++i) {
 		temp_t new;
 		new.done = 1;
 		enqueue(&new, &t->que1[i]);
 		pthread_cond_signal(&t->que1[i].array[t->que1[i].delete_index]->wake);
 	}
-		
 	free(arg);
-	return (void *) NULL;
+	return (void *) 0;
 }
 
+// Compare function
 int cmp(const void *a, const void *b) {
 	temp_t *a1 = *(temp_t **) a;
     temp_t *b1 = *(temp_t **) b;
 	return strcmp(a1->name, b1->name);
 }
 
+// Compressor function
 void *compressor2(void *arg) {
 	arg_t *t = (arg_t *) arg;
-	//struct timespec start, end;
-	//int counter1 = 0;
-
+	int total_in = 0;
 	while (1) {
-		//clock_gettime(CLOCK_MONOTONIC, &start);
+		// Dequeue the file
 		temp_t tmp_c = dequeue(t->que1);
-		//printf("it is here %d\n", counter++);
+		// If the queue is empty, break
 		if (tmp_c.done)
 			break;
 
@@ -181,34 +122,21 @@ void *compressor2(void *arg) {
 			counter++;
 			ptr++;
 		}
-		
 		unsigned char *buffer = tmp_c.ptr;
-		
 		int len = strlen(t->argv[1]) + strlen((char *) buffer) + 2; // Get the size of the name + size of the image
-	
 		char *full_path = malloc(len * sizeof(char)); // Allocate memory with the same size
 		assert(full_path != NULL); 
-		
 		strcpy(full_path, t->argv[1]); // Copy the file into the new allocated space
 		strcat(full_path, "/");
 		strcat(full_path, (char *) buffer);
-
-		
 		unsigned char *buffer_in = (unsigned char*) malloc(sizeof(unsigned char) * BUFFER_SIZE);		
 		unsigned char *buffer_out = (unsigned char *) malloc(sizeof(unsigned char) * BUFFER_SIZE);
-
-		
-		
 		// Load file
 		FILE *f_in = fopen(full_path, "r");
-		
 		assert(f_in != NULL);
-		
 		int nbytes = fread(buffer_in, sizeof(unsigned char), BUFFER_SIZE, f_in);
 		fclose(f_in);
 		total_in += nbytes;
-		
-		
 		// zip file
 		z_stream *strm = (z_stream *) malloc(sizeof(z_stream));
 		assert(strm != NULL);
@@ -218,27 +146,22 @@ void *compressor2(void *arg) {
 		strm->next_in = buffer_in;
 		strm->avail_out = BUFFER_SIZE;
 		strm->next_out = buffer_out;
-		
 		ret = deflate(strm, Z_FINISH);
-		//clock_gettime(CLOCK_MONOTONIC, &end);
-		//if (counter1 == 0)
-			//
-		//counter1++;
 		assert(ret == Z_STREAM_END);
-		
-		
 		temp_t *tmp = (temp_t *) malloc(sizeof(temp_t));
 		assert(tmp != NULL);
 		tmp->ptr = buffer_out;
 		tmp->strm = strm;
 		tmp->name = name;
-		
 		enqueue(tmp, t->que2);
-		free(full_path);	
+		free(full_path);
 	}
-	return (void *) NULL;
+	return (void *) (long long) total_in;
 }
 
+void free_queue(queue_t *queue){
+    free(queue->array);
+}
 
 int main(int argc, char **argv) { 
 	// time computation header
@@ -258,67 +181,52 @@ int main(int argc, char **argv) {
     for (int i = 0; i < numberOfT; i++){
         init(&que_outs[i]);
     }
-
-	//clock_gettime(CLOCK_MONOTONIC, &end5);
-	//printf("init Time: %.10f seconds\n", ((double)end5.tv_sec+1.0e-9*end5.tv_nsec)-((double)start.tv_sec+1.0e-9*start.tv_nsec));
 	
-	//printf("it is here\n");
-	// Open the image directory:
 	DIR *entries = opendir(argv[1]);
 	assert(entries != NULL);
-	// Create the copy thread
+	// Create the copy thread, only one thead for copy
 	arg_t *arg = (arg_t *) malloc(sizeof(arg_t));
 	assert(arg != NULL);
 	arg->dir = entries;
 	arg->que1 = (queue_t *) &ques;
 	pthread_create(&t[0], NULL, file_producer, arg);
-	
-	//pthread_join(t[0], NULL);
-	
-	//printf("The size of queue 1: %zu\n", ques[0].size);
-	
 	FILE *f_out = fopen("video.vzip", "w");
 	assert(f_out != NULL);
 	
-	
-	//call the compressor;
-	//pthread_join(t[0], NULL);
+	//Create thread for compressors
 	for (int i = 1; i < numberOfT; i++) {
 	    arg_t *arg2 = (arg_t *) malloc(sizeof(arg_t));
 		assert(arg2 != NULL);
 	    arg2->que1 = &ques[i - 1];
 	    arg2->que2 = &que_outs[i];
 	    arg2->argv = argv;
-		
 	    pthread_create(&t[i], NULL, compressor2, arg2);
 	}
-	
-	// Join threads:
+	int total_in = 0;
+
+	// Join threads and calculate the total_in
+	void *tmp = 0;
     for (int i = 0; i < numberOfT; i++){
-        pthread_join(t[i], NULL);
+        pthread_join(t[i], &tmp);
+		total_in += (long long) tmp;
     }
-	
-	
-	
-	
+
 	// Close the directory:
 	closedir(entries);
-	//clock_gettime(CLOCK_MONOTONIC, &end2);
-	//printf("just after join Time: %.10f seconds\n", ((double)end2.tv_sec+1.0e-9*end2.tv_nsec)-((double)start.tv_sec+1.0e-9*start.tv_nsec));
+
+	//Move all compressed files to the first queue
     for (int i = 1; i < numberOfT; i++){
         while (!isEmpty(&que_outs[i])){
             temp_t a = dequeue(&que_outs[i]);
             enqueue(&a, &que_outs[0]);
         }
     }
-	//printf("The size of que_out: %zu\n", que_outs[0].size);
-	//clock_gettime(CLOCK_MONOTONIC, &end3);
-	//printf("vefore Time: %.10f seconds\n", ((double)end3.tv_sec+1.0e-9*end3.tv_nsec)-((double)start.tv_sec+1.0e-9*start.tv_nsec));
-	// Write the files:
+	
+	// Sort the files
 	qsort(que_outs[0].array, que_outs[0].size, sizeof(temp_t *), cmp);
-	//clock_gettime(CLOCK_MONOTONIC, &end4);
-	//printf("after Time: %.10f seconds\n", ((double)end4.tv_sec+1.0e-9*end4.tv_nsec)-((double)start.tv_sec+1.0e-9*start.tv_nsec));
     int total_out = 0;
+	
+	// Write the compressed files to the video.vzip
 	while(!isEmpty(&que_outs[0])) {
 		temp_t tmp = dequeue(&que_outs[0]);
 		// dump zipped file
@@ -328,6 +236,12 @@ int main(int argc, char **argv) {
 		total_out = nbytes_zipped + total_out;
 	}
 	fclose(f_out);
+    
+	// Free the queues:
+    for (int i = 0; i < numberOfT; i++){
+        free_queue(&ques[i]);
+        free_queue(&que_outs[i]);
+    }
 	printf("Compression rate: %.2lf%%\n", 100.0 * (total_in - total_out) / total_in);
 	// do not modify the main function after this point!
 	
@@ -335,6 +249,5 @@ int main(int argc, char **argv) {
 	clock_gettime(CLOCK_MONOTONIC, &end);
 	printf("Time: %.2f seconds\n", ((double)end.tv_sec+1.0e-9*end.tv_nsec)-((double)start.tv_sec+1.0e-9*start.tv_nsec));
 	// end of time computation footer
-
 	return 0;
 }

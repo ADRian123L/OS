@@ -1,5 +1,5 @@
 vzip: serial.c
-	gcc serial.c -lz -o vzip -Wall
+	gcc serial.c -lz -o vzip -Wall -Wextra 
 
 test:
 	rm -f video.vzip
