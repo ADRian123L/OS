@@ -10,7 +10,7 @@
 #include <zlib.h>
 
 #define BUFFER_SIZE 1048576 // 1MB
-#define numberOfT 9
+#define numberOfT 20
 
 // Structure declarations:
 typedef struct _temp    temp_t;

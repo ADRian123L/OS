@@ -14,7 +14,7 @@ int enqueue(temp_t *obj, queue_t *queue);
 int init(queue_t *queue);
 temp_t dequeue(queue_t *queue);
 
-// Enqueue function
+// Enqueue function:
 int enqueue(temp_t *obj, queue_t *queue) {
 	pthread_mutex_lock(&(queue->array[queue->insert_index]->node_lock));
 	queue->array[queue->insert_index]->done = obj->done;
